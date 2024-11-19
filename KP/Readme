@@ -1,0 +1,248 @@
+# MOP Kursa projekts
+
+Kursa projekts ir kā alternatīva rakstiskajam eksāmenam. Šogad kursa projekta ietvaros jāizstrādā grafiskā bibliotēka "Agra".
+
+Grafiskās bibliotēkas mērķis ir realizēt efektīvus algoritmus grafisko primitīvu konstruēšanai kadra (frame) buferī.
+
+Jums jāizstrādā asemblera procedūru bibliotēka Agra. Jūsu asemblera programmas tiks izsauktas no C valodā rakstīta pirmkoda, tātad parametriem jābūt atbilstošiem.
+
+Jāizstrādā un jāiesniedz sekojoši faili (visi papildus faili tiks ignorēti):
+
+- **Makefile** - fails, kas ļauj kompilēt jūsu programmu
+- **agra.h** - pirmkoda fails ar funkcijas prototipu, ko iekļaus gan C gan asemblera faili.
+- **agra.s** - programmu asemblerā, kas realizē grafisko bibliotēku.
+- **agra_main.c** - programmu C valodā, kas testē asemblera programmas.
+- **framebuffer.c** - programmu C valodā, kas iekļauj kadra bufera piekļuves funkcijas.
+- **apraksts.pdf** - Risinājuma apraksts vienas A4 lapas apjomā, pdf formātā.
+
+## Apraksts
+
+Jūsu iesniedzamais apraksts stāsta par jūsu izvēlēto risinājumu. Apjoms: 1-2 A4 lapu apjomā, pdf formātā. Aprakstam jāatbild uz sekojošiem jautājumiem:
+
+- Kāda funkcionalitāte realizēta? Kā tā realizēta?
+- Kas nav realizēts vai nedarbojas, kāpēc?
+- Kas bija lielākais izaicinājums projektā?
+- Ko nākamreiz darītu citādi, ja vispār?
+- Citi komentāri par risinājumu.
+
+## Datu tipi
+
+Realizējamās funkcijas un datu tipi ir sekojošie (deklarēti failā agra.h):
+
+```c
+// Krāsas tips punktam:
+//    r,g,b ir sarkanā, zaļā, un zilā krāsu komponentes, katrai 10 biti.
+//    op  ir operācija, kas jāizpilda šim pikselim ar fona krāsu. 0 - nozīmē rakstīt pāri.
+typedef struct {
+    unsigned int r  : 10;
+    unsigned int g  : 10;
+    unsigned int b  : 10;
+    unsigned int op: 2;
+} pixcolor_t;
+
+// Operācijas iespējas pikselim ar fona (FrameBuffer) krāsu.
+// Izmantots pixcolor_t struktūras laukā "op".
+typedef enum {
+    PIXEL_COPY = 0,
+    PIXEL_AND  = 1,
+    PIXEL_OR   = 2,
+    PIXEL_XOR  = 3
+} pixop_t;
+
+// Funkcija krasas (un operācijas) uztādīšanai
+void setPixColor( pixcolor_t * color_op);
+
+// Funkcija viena pikseļa uzstadīšanai
+void pixel(int x, int y, pixcolor_t * colorop);
+
+// Funkcija līnijas zīmēšanai starp punktiem
+void line(int x1, int y1, int x2, int y2);
+
+// Funkcija trijstūra aizpildīšanai ar tekošo krāsu
+void triangleFill(int x1, int y1, int x2, int y2, int x3, int y3);
+
+// Funkcija riņķa līnijas zīmēšanai
+void circle(int x1, int y1, int radius);
+```
+
+Komentārs: vienkāršākajā gadījumā "op" lauku pixcolor_t struktūrā varat ignorēt, vienmēr rakstot pāri "pikseļa" krāsu fona (FrameBuffer) krāsai. Tomēr, ja vēlaties to realizēt, atļaujot veikt automātiskas operācijas jaunajiem "pikseļiem" ar fonu, tad ņemiet vērā "op" lauku, kas var saturēt "pixop_t" operācijas tipus. Tipi nosaka, kāda loģiskā operācija jāveic "pikseļa" jaunajai krāsai ar fona krāsu. Par šīs iespējas realizāciju vērtējumā iespējami +10% bonusa punkti.
+
+## Kadra bufera pieejas funkcijas
+
+Jūsu funkcijām jāizmanto kadra bufera pieejas funkcijas, kas deklarētas failā agra.h un realizētas failā framebuffer.c.
+
+```c
+// Kadra bufera sākuma adrese
+pixcolor_t * FrameBufferGetAddress();
+
+// Kadra platums
+int FrameBufferGetWidth();
+
+// Kadra augstums
+int FrameBufferGetHeight();
+
+// Kadra izvadīšana uz "displeja iekārtas".
+int FrameShow();
+```
+
+Visos gadījumos, kur nav specificēta funkciju atgriežamā vērtība, bet tās tips ir dots kā int, 0 nozīmē veiksmīgu un 1 - neveiksmīgu izpildi.
+
+## Krāsu kodēšana ar simboliem
+
+Jūsu gadījumā kadra izvadīšana uz "displeja iekārtas" nozīmē izdrukāt uz ekrāna bufera saturu, kur katram pikselim atbilst viens simbols. Vispārīgā gadījumā šis varētu būt izvads arī uz grafiska LCD ekrāna.
+
+Pikseļu simbolus lūdzu izvēlēties saskaņā ar sekojošām leģendām (katram pikselim viens burts):
+
+- melnās krāsas simbols ir tukšums ' ' (black)
+- baltās krāsas simbols ir zvaigznīte '*' (white)
+- ja dominē sarkanā krāsa, jāizvada 'R' (red)
+- ja dominē zaļā krāsa, jāizvada 'G' (green)
+- ja dominē zilā krāsa, jāizvada 'B' (blue)
+- ja dominē zaļā un zilā krāsa, jāizvada 'C' (cyan)
+- ja dominē sarkanā un zilā krāsa, jāizvada 'M' (magenta)
+- ja dominē zaļā un sarkanā krāsa, jāizvada 'Y' (yellow)
+
+Šāds izvads aproksimē krāsainu izvadu, kur krāsas iekodētas ar burtiem. "Dominē" nozīmē "ir intensīvāka". To var novērot, piemēram, 3D krāsu kubā. Bieži uzdots jautājums ir: kā lai precīzi nosaka kura krāsa dominē, ja katrai ir 10 bitu vērtība? Viens iespējamais risinājums ir sekojošs: sadaliet RGB kubu ar 3 plaknēm uz pusēm visās 3 dimensijās tā, lai sanāk 8 mazāki kubi. Katram no šiem kubiem piešķiriet vienu no augšminētajām 8 krāsām. Tehniski tas realizējams normalizējot katru no RGB krāsām uz vienu bitu, piemēram, paņemot vecāko krāsas bitu. Tad 3-bitu RGB kombinācija noteiks piederību vienam no 8 attiecīgajiem krāsu apgabaliem.
+
+## Testa demonstrācija
+
+Jūsu izstrādātajam komplektam jādemonstrē bibliotēkas darbība. To var panākt attiecīgi definējot izsaukumus agra_main.c pirmkoda failā, piemēram, no funkcijas main():
+
+- definēt ekrāna buferi ar izmēru 40 x 20 (lietojot jūsu framebuffer.c versiju)
+- notīrīt buferi, aizpildīt katru pikseli ar 0x00000000
+- zīmēt pikseli koordinātās (25,2), baltu.
+- zīmēt līniju no (0,0) līdz (39,19), zilu, ar intensitāti 0x03ff
+- zīmēt aizpildītu trijstūri: (20,13), (28,19), (38,6), zaļu, ar intensitāti 0x03ff
+- zīmēt riņķa līniju ar centru (20,10) un rādiusu 7, sarkanu, ar intensitāti 0x03ff
+- izsaukt funkciju FrameShow()
+
+Šis scenārijs jums jārealizē jūsu agra_main.c failā un tiks testēts. Tiks testēti arī citi scenāriji, tātad jānodrošina pilna uzskaitīto funkciju funkcionalitāte, pat ja tā nav iekļauta šajā demonstrācijas piemērā.
+
+## Kļūdu konstatēšana un apstrāde
+
+Iespējamas sekojošas kļūdas, uz kurām attiecīgi jāreaģē:
+
+- Tiek zīmēts ārpus kadra - pikseļi ārpus kadra jāignorē.
+
+## Testēšana un iesniegšana
+
+Risinājumam jābūt testētam, un jādarbojās uz asm1.linux.edu.lv servera, lietojot ARM emulatoru qemu-arm.
+
+Risinājumu jāiesūta elektroniski. Risinājumam ar visiem failiem jābūt uz servera asm1.linux.edu.lv jūsu konta direktorijā agra:
+
+`~/agra/`
+
+Uzskaitītie faili tiks izkopēti no minētas direktorijas MD termiņa beigās.
+
+Risinājumu jābūt gatavam demonstrēt un izskaidrot eksāmenā.
+
+Jautājumus un neskaidrības par projektu lūdzu iesūtīt kursa diskusiju grupā.
+
+## Bieži uzdotie jautājumi
+
+### Algoritmi
+
+**Q: Kādus algoritmus lietot?**
+
+**A:** Iesaku pameklēt nevis izdomāt pašiem. Piemēram: [šeit](https://en.wikipedia.org/wiki/Line_drawing_algorithm)
+
+### Framebuffer
+
+1. **FrameBuffer funkcijas - FrameBufferGetAddress(), FrameBufferGetWidth(), FrameBufferGetHeight() - ir jārealizē pašiem, vai tās tiks iedotas gatavas?**
+
+   Jums tās nepieciešams realizēt pašiem lai testētu savu darbu. Pēc būtības tās ir vienkāršas - atgriež adresi uz gana lielu buferi un atgriež integer skaitļiem šim buferim. Iesaku kodu parametrizēt, lai varat pārbaudīt dažādiem buferu izmēriem. FrameShow() ir nedaudz sarežģītāka, bet arī tā reducējas uz masīva satura kodēšanu un izdrukāšanu.
+
+   Protams, darba vērtēšanai būs izveidotas arī speciālas versijas šīm funkcijām, bet to kods nav pieejams.
+
+2. **Kā ir paredzēts ieraudzīt FrameBuffer saturu, strādājot caur SSH?**
+
+   Iespējami dažādi veidi, jūs savos testos varat izmantot sev piemērotāko. Te būs dažas idejas:
+
+   - hexdump, tekstuāli salasāms izvads uz ekrāna
+   - pseido-grafika ar simboliem (piemēram '*' ) pikseļu vietā
+   - GDB + Qemu atkļūdošanas režīmā, varat pat skatīties kā buferis aizpildās pa pikseļiem
+   - izvads failā.
+
+   Nemiet vērā, ka visām šīm speciālajām iespējām gala versijā nav jābūt, piemēram, vērtētājs negaidīs nekādus pēkšņus hexdump uz stdio.
+
+3. **Kā notiks uzdevuma testēšana?**
+
+   Līdzīgi kā MD, automatizēta testēšanas sistēma izmēģinās dažādus izsaukumus bibliotēkai, kā arī versiju ar jūsu izsaukumu.
+
+   Bez tam, eksāmena dienā pasniedzējs var izmēģināt jūsu sistēmas darbību.
+
+4. **Vai var izmantot kaut kādas C funkcijas, piemēram matemātiskas (tādas, kā sinus)?**
+
+   Nē, lūdzu neizmantot sin() un tml. sarežģītas funkcijas, lietotājam nav laika gaidīt kamēr katram pikselim tiek rēķināts sinus vai tml. Bez tam, tad jums būtu nepieciešama matemātikas bibliotēka, ko vērtēšanas rīks neplāno iekļaut saišu redaktora bibliotēku sarakstā.
+
+5. **Kam ir jābūt agra_main.c failā?**
+
+   Speciālam piemēram, kas testē visas bibliotēkas funkcijas. Sīkāk skatīt uzdevuma nosacījumos sadaļu: Testa demonstrācija.
+
+6. **Vai jūs varat ielikt vismaz vienu testpiemēru, lai būtu intuitīvi skaidrs, kā apmēram notiks testēšana?**
+
+   Lūdzu skatīt 3. jautājuma atbildi, kā arī uzdevuma nosacījumos sadaļu: Testa demonstrācija.
+
+### FrameBuffer un op lauks
+
+7. **Kāpēc katram pikselim ir "op" lauks, kurš pēc būtības ir globāls visai bibliotēkai?**
+
+   Lielisks jautājums. Jā, varētu iztikt bez šī lauka, un attiecīgi paplašināt laukus divām krāsām. Vai arī ieviest šiem bitiem citu nozīmi bufera vai pikseļu matricas (bitmap) pikseļu kontekstā, piemēram, pats buferis varētu noteikt, kāda operācija ar to veicama jaunajiem pikseļiem, vai arī tas varētu būt "caurspīdīguma", vai pat "mirgošanas" bits. Mirgošanu gan parasti paredz teksta un nevis grafiskajiem režīmiem.
+
+   Savukārt aparatūrā video kadra atmiņa var tikt realizēta kā 3x10 nevis 32 bitu vārdi.
+
+   Projekta kontekstā es atstāju visus krāsu bitu laukus vienāda garuma lai vienkāršotu uzdevumu. Un atdzīstos, ka 2 op biti katram kadra pikselim būs lieki. Tātad, uzdevuma specifikācija nemainās.
+
+### Pikseļu reprezentācija testējot
+
+8. **melnās krāsas simbols ir tukšums
+   baltās krāsas simbols ir zvaigznīte
+   ja dominē sarkanā krāsa, jāizvada 'R'
+   ja dominē zaļā krāsa, jāizvada 'G'
+   ja dominē zilā krāsa, jāizvada 'B'
+   ja dominē zaļā un zilā krāsa, jāizvada 'C'
+   ja dominē sarkanā un zilā krāsa, jāizvada 'M'
+   ja dominē zaļā un sarkanā krāsa, jāizvada 'Y'**
+
+   Tas ir nosacījums vai rekomendācija? Zemāk ir minēti vēl visādi izvades piemēri... Vai var piemēram lietot 219 (pēc ASCII tabulas) simbolu un dažādas teksta krāsas?
+
+   Tas ir nosacījums, lai varu testēt jūsu darbus. Jo man būtu grūti uzminēt, vai negaidīti simboli ir kļūda vai plāns. Pārējie piemēri bija jums, kā viela pārdomām, iespējas izvērsties pašiem savā atkļūdošanas procesā, kā arī informācija, kā tādas lietas tiek vai var tikt darītas.
+
+### FrameBuffer inicializācija
+
+9. **"1. definēt ekrāna buferi ar izmēru 40 x 20 (lietojot jūsu framebuffer.c versiju)"
+
+Framebuffer.c pēc nosacījuma nesatur inicializācijas funkciju. Viņš vispār nesatur nevienu funkciju, kurai var padot bufera izmērus.**
+
+   Taisnība. Tāpēc viens risinājums ir parametrizēt ekrāna izmērus kompilācijas laikā ar, piemēram,
+
+   ```c
+   #define FrameWidth 800
+   ```
+
+### Kuras C funkcijas sauc no asemblera
+
+10. **"Frame... funkcijas jāizsauc no asamblera (kaut arī tās ir realizētas C valodā)." FrameShow() arī? Kurā tieši no "specifikācijā norādītajām funkcijām" tas ir jāizdara?**
+
+   Pajautājiet sev, kuras no funkcijām vajag bibliotēkai asemblerā, un kuras klienta programmai - testētājam?
+
+   Show funkcija bibliotēkai nav nepieciešama, bet testētājam/lietotājam gan, kad viss uzzīmēts. Toties bibliotēkai jāzina, cik buferis liels un kur atrodas, lai tajā varētu rakstīt.
+
+### Iekļaušana framebuffer?
+
+11. **Ja FrameShow() un nosacīti FrameInit() ir tomēr jāizsauc no C, tad nav skaidrs, kādā veidā agra_main.c par tiem uzzinās.**
+
+   `#include "framebuffer.c"` laikam nav pats labākais risinājums.
+
+   Nav gan. Vispār `#include "*.c"` nav labs stils.
+
+   Labāk būtu `#include "framebuffer.h"`. Bet tad man jāprasa, lai projektā visiem būtu šāda funkcija.
+
+   Alternatīva ir iekļaut framebuffer funkciju prototipus iekš agra.h, nemainot uzdevuma nosacījumus. Tad galvenajai programmai pietiktu ar `#include "agra.h"`, lai varētu lietot bibliotēku (nevajadzētu iekļaut abus .h failus). Pie šī risinājuma paliksim kā oficiālā.
+
+### Funkciju vērtība neveiksmīgas izpildes gadījumā
+
+12. **Kādas ir funkcijas int FrameShow() "neveiksmīgās izpildes"? Jo pēc nosacījuma: "Visos gadījumos, kur nav specificēta funkciju atgriežamā vērtība, bet tās tips ir dots kā int, 0 nozīmē veiksmīgu un 1 - neveiksmīgu izpildi."**
+
+   Visas tās, ko jūs atradīsiet. Ja funkcijai nav iespējama neveiksmīga izpilde, tā vienmēr atgriež 0.
+
