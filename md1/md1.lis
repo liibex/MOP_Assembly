@@ -1,0 +1,33 @@
+ARM GAS  md1.s 			page 1
+
+
+   1              	    .text           @ code block start
+   2              	    .align 2        @ Izlīdzīna 8 byte bloku
+   3              	    .global asum    @ global asum
+   4              	    
+   5              	asum:
+   6 0000 010050E3 	    CMP r0, #1      @ Compare n with 1
+   7 0004 090000BA 	    BLT error       @ If n < 1, go to error
+   8              	
+   9 0008 0010A0E3 	    MOV r1, #0      @ sum = 0
+  10 000c 0120A0E3 	    MOV r2, #1      @ i = 1
+  11              	
+  12              	loop:
+  13 0010 021091E0 	    ADDS r1, r1, r2     @ sum += i, sets flags
+  14 0014 0700006A 	    BVS overflow        @ If overflow (V flag set), go to overflow
+  15 0018 012082E2 	    ADD r2, r2, #1      @ i++
+  16 001c 000052E1 	    CMP r2, r0          @ Compare i with n
+  17 0020 000000CA 	    BGT done            @ If i > n, go to done
+  18 0024 F9FFFFEA 	    B loop              @ Repeat loop
+  19              	
+  20              	done:
+  21 0028 0100A0E1 	    MOV r0, r1      @ Return sum in r0
+  22 002c 1EFF2FE1 	    BX lr           @ Return
+  23              	
+  24              	error:
+  25 0030 0000A0E3 	    MOV r0, #0      @ Return 0
+  26 0034 1EFF2FE1 	    BX lr           @ Return
+  27              	
+  28              	overflow:
+  29 0038 0000A0E3 	    MOV r0, #0      @ Return 0 in case of overflow
+  30 003c 1EFF2FE1 	    BX lr           @ Return

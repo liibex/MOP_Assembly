@@ -1,0 +1,76 @@
+Grading el09105 (2024-10-28_22-04)
+
+Making test case test_all...
+arm-linux-gnueabi-gcc -g -mcpu=xscale -O0 -Wall -o md1_main.o -c md1_main.c
+arm-linux-gnueabi-as -g -mcpu=xscale -alh=md1.lis -L -o md1.o md1.s
+arm-linux-gnueabi-gcc  -o test_all md1_main.o md1.o
+Make successful.
+=== Score: +1
+
+===== Test case: test1
+Testing input:
+1
+Expected output:
+1
+Received output:
+1
+=== Score: +2
+
+===== Test case: test2
+Testing input:
+2
+Expected output:
+3
+Received output:
+3
+=== Score: +2
+
+===== Test case: test3
+Testing input:
+4
+Expected output:
+10
+Received output:
+10
+=== Score: +2
+
+===== Test case: test4
+Testing input:
+32
+Expected output:
+528
+Received output:
+528
+=== Score: +2
+
+===== Test case: test5
+Testing input:
+101
+Expected output:
+5151
+Received output:
+5151
+=== Score: +2
+
+===== Test case: test6
+Testing input:
+1024
+Expected output:
+524800
+Received output:
+524800
+=== Score: +2
+
+===== Test case: test7
+Testing input:
+2233
+Expected output:
+2494261
+Received output:
+2494261
+=== Score: +2
+
+Total Score: 15 
+============
+
+Maksimālais iespējamais punktu skaits par šo uzdevumu: 15
