@@ -39,22 +39,29 @@ $(TARGET).o: $(TARGET).s
 # Test using qemu-arm to emulate ARM architecture
 test: all
 	@echo "Running tests..."
-	@$(MAKE) -s test_case INPUT="HELLO WORLD" EXPECT="Hello World"
-	@$(MAKE) -s test_case INPUT="hello world" EXPECT="Hello World"
-	@$(MAKE) -s test_case INPUT="THIS is a TeST" EXPECT="This Is A Test"
-	@$(MAKE) -s test_case INPUT="already Title Case" EXPECT="Already Title Case"
+	@$(MAKE) -s test_case INFILE=$(TESTDIR)/infile1.txt OUTFILE=$(TESTDIR)/outfile1.txt EXPECT=0
+	@$(MAKE) -s test_case INFILE=$(TESTDIR)/infile2.txt OUTFILE=$(TESTDIR)/outfile2.txt EXPECT=0
+	@$(MAKE) -s test_case INFILE=$(TESTDIR)/infile3.txt OUTFILE=$(TESTDIR)/outfile3.txt EXPECT=0
+	@$(MAKE) -s test_case INFILE=$(TESTDIR)/infile4.txt OUTFILE=$(TESTDIR)/outfile4.txt EXPECT=0
+	@$(MAKE) -s test_case INFILE=$(TESTDIR)/infile5.txt OUTFILE=$(TESTDIR)/outfile5.txt EXPECT=0
+	@$(MAKE) -s test_case INFILE=$(TESTDIR)/infile6.txt OUTFILE=$(TESTDIR)/outfile6.txt EXPECT=0
+	@$(MAKE) -s test_case INFILE=$(TESTDIR)/infile7.txt OUTFILE=$(TESTDIR)/outfile7.txt EXPECT=0
+	@$(MAKE) -s test_case INFILE=$(TESTDIR)/infile8.txt OUTFILE=$(TESTDIR)/outfile8.txt EXPECT=1
 	@echo "All tests completed."
 
 # Run a single test case
 test_case:
-	@echo "Testing with input: \"$(INPUT)\""
-	@echo "$(INPUT)" | qemu-arm -L /usr/arm-linux-gnueabi ./$(TARGET) > result.txt
-	@ACTUAL=$$(cat result.txt); \
-	if [ "$$ACTUAL" = "$(EXPECT)" ]; then \
-		echo "PASS: $(INPUT) -> $$ACTUAL"; \
-		echo "══════════════════════════"; \
+	@echo "Testing with input file: $(INFILE) (expected result: $(EXPECT))..."
+	@qemu-arm -L /usr/arm-linux-gnueabi ./$(TARGET) < $(INFILE) > result.txt; \
+	EXIT_STATUS=$$?; \
+	if [ "$$EXIT_STATUS" -eq "$(EXPECT)" ]; then \
+		if [ "$(EXPECT)" -eq "0" ]; then \
+			diff -q result.txt $(OUTFILE) && echo "PASS" || (echo "FAIL" && exit 1); \
+		else \
+			echo "PASS"; \
+		fi \
 	else \
-		echo "FAIL: $(INPUT) -> $$ACTUAL (expected: $(EXPECT))"; \
+		echo "FAIL"; \
 		exit 1; \
 	fi
 

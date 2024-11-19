@@ -38,15 +38,11 @@ not_first:
         B       set_first_false
 
 skip_case_change:
-        CMP     R5, #'A'                @ Check if letter
-        BLT     set_first_true          @ < 'A'
-        CMP     R5, #'Z'
-        BLE     set_first_false         @ 'A' < >= 'Z'
-        CMP     R5, #'a'
-        BLT     set_first_true          @ 'Z' < > 'a'
-        CMP     R5, #'z'
-        BGT     set_first_true          @ 'z' <
-        B       set_first_false         @ 'a' < >= 'z'
+        CMP     R5, #' '                @ Check if space
+        BEQ     set_first_true          @ If space, set first flag
+        CMP     R5, #9                  @ Check if tab
+        BEQ     set_first_true          @ If tab, set first flag
+        B       set_first_false         @ Otherwise, reset first flag
 
 set_first_false:
         MOV     R4, #0                  @ first = false
@@ -57,9 +53,20 @@ set_first_true:
         B       store_char
 
 store_char:
-        STRB    R5, [R0], #1    
+        STRB    R5, [R0], #1
+        CMP     R5, #0                  @ Check if null terminator
+        BEQ     end                     @ Exit if null terminator
         B       loop                    @ back to loop
 
 end:
-        POP     {R4, R5, PC}            @ Return
+        MOV     R0, #0                  @ Set return value to 0 (success)
+        POP     {R4, R5, LR}
+        MOV     PC, LR
+
+@ store_char:
+@         STRB    R5, [R0], #1    
+@         B       loop                    @ back to loop
+
+@ end:
+@         POP     {R4, R5, PC}            @ Return
 

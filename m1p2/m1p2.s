@@ -3,50 +3,42 @@
         .global m1p2
         .type m1p2, %function
 
-@ m1p2(int N)
-@ Finds and prints special numbers with exactly three 1-bits in the range 1 to N.
-
-@ R0 - Used for `printf` format string (temporary)
-@ R1 - Used for `printf` argument (current number to print)
-@ R4 - Stores the upper limit N (passed as parameter)
-@ R5 - Loop counter, the current number being checked
-@ R6 - Bit count (number of 1-bits in the binary representation of R5)
-@ R3 - Temporary register for bit manipulation during count
-
+@ R0 input N
+@ R4 upper limit
+@ R5 current number
+@ R6 bit count
 m1p2:
-        PUSH    {R4, R5, R6, LR}     @ Save LR, R4 (for N), R5 (loop counter), and R6 (bit count)
-
-        MOV     R4, R0               @ Store N in R4 (the upper limit)
-        MOV     R5, #1               @ Initialize loop counter (1 to N)
+        PUSH    {R4, R5, R6, LR}     @ Save state
+        MOV     R4, R0               @ R4 = N
+        MOV     R5, #1               @ Start at 1
 
 loop:
-        CMP     R5, R4               @ Check if counter <= N (stored in R4)
-        BGT     end                  @ Exit if counter > N
+        CMP     R5, R4               @ If R5 > N, exit
+        BGT     end
 
-        MOV     R3, R5               @ Copy loop counter to R3 for bit counting
+        MOV     R3, R5               @ Copy R5 for bit count
         MOV     R6, #0               @ Reset bit count
 
 count_bits:
-        TST     R3, #1               @ Test if LSB is 1
-        ADDNE   R6, R6, #1           @ If so, increment bit count
-        MOV     R3, R3, LSR #1       @ Logical shift right by 1
-        CMP     R3, #0               @ Check if R3 is zero
-        BNE     count_bits           @ Repeat if more bits to check
+        TST     R3, #1               @ Check LSB
+        ADDNE   R6, R6, #1           @ Increment count if 1
+        MOV     R3, R3, LSR #1       @ Shift R3
+        CMP     R3, #0               @ Done?
+        BNE     count_bits
 
-        CMP     R6, #3               @ Check if bit count is exactly 3
-        BNE     next                 @ If not, go to next number
+        CMP     R6, #3               @ Exactly 3 bits?
+        BNE     next
 
-@ Print special number in hex
-        LDR     R0, =printf_fmt      @ Load address of format string into R0
-        MOV     R1, R5               @ Move the current number to R1 for printing
-        BL      printf               @ Call printf (R0 = format, R1 = number)
+        LDR     R0, =printf_fmt      @ Load format
+        MOV     R1, R5               @ Set argument
+        BL      printf               @ Print R5
 
 next:
-        ADD     R5, R5, #1           @ Increment loop counter
-        B       loop                 @ Repeat loop
+        ADD     R5, R5, #1           @ Next number
+        B       loop
 
 end:
-        POP     {R4, R5, R6, PC}     @ Restore registers and return
+        POP     {R4, R5, R6, PC}     @ Restore state
 
 printf_fmt:
-        .asciz  "%x\n"               @ Format string for printf (hexadecimal)
+        .asciz  "%x\n"               @ Hex format

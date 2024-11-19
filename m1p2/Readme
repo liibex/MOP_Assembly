@@ -1,0 +1,93 @@
+# Vidussemestra kontroldarba programmēšanas uzdevumi
+
+## M1P1, M1P2
+
+## Kurss: Mašīnorientētā programmēšana
+
+## Mērķi:
+
+* Lietot aritmētiskās un vadības kontroles instrukcijas  
+* Darbs ar datiem atmiņā  
+* Parametru nodošana asemblera funkcijai  
+* C funkciju izsaukšana no asemblera
+
+# M1P1
+
+## Apraksts
+
+Izstrādāt funkciju **m1p1(char \* buffer)**, kas rakstīta Asembler programmēšanas valodā un var tikt izsaukta no “C” programmas. Funkcijai ir viens parametrs: norāde (*pointer*) uz simbolu virkni atmiņas buferī, kam beigās pielikts nulles baits, kas apzīmē simbolu virknes beigas.
+
+Funkcijai jāpārveido teksts simbolu virknē uz tā saukto “Title case” \- formātu, kur katrs vārds sākas ar lielo burtu bet visi citi burti ir mazie burti. Ņemt vērā tikai Latīņu alfabeta burtus. Visus pārējos burtus vai simbolus atstāt tādus, kādi tie ir oriģinālajā tekstā.
+
+Piemēram: “Tas ir LABAIS” jāpārvērš uz “Tas Ir Labais” tajā pašā buferī. 
+
+Jums jāizveido sekojoši pirmkoda faili ar tieši šādiem nosaukumiem: 
+
+* **Makefile** \- darba plūsmas konfigurēšanas fails  
+* **main.c** \- galvenā C programma  
+* **m1p1.s** \- programma Asemblerā, kas realizē funkciju  
+* **m1p1.h** \- “header” fails funkcijai
+
+visiem failiem jābūt direktorijā  
+ ***m1p1***   
+kas savukārt atrodas jūsu mājas direktorijā uz kursa servera.
+
+## Galvenā C programma
+
+Asemblera funkcija tiek izsaukta no **main()** programmas kas rakstīta C.   
+main() funkcija  saņem un apstrādā argumentus un sagatavo atmiņas buferus pēc vajadzības. Tā arī izdrukā rezultātu, ja vien uzdevuma nosacījumi neprasa, ka rezultāts jādrukā no Asemblera programmas.
+
+Šajā uzdevumā main() programmai jāpieņem arguments **no “standard input”** (stdin) \- caur to tiks programmai nodota apstrādājamā simbolu virkne. Tā jāsaglabā buferī, un bufera adrese jāpadod asemblera funkcijai kā parametrs.   
+Pēc atgriešanās no asemblera funkcijas izsaukuma, C programmai jāizdrukā atgrieztais rezultāts. Pašai C programmai jāatgriež 0\.
+
+# M1P2
+
+## Apraksts
+
+Izstrādāt funkciju **m1p2(int N)**, kas rakstīta Asembler programmēšanas valodā un var tikt izsaukta no “C” programmas. Funkcijai ir viens parametrs: vesels skaitlis N kas lielāks par 0\.  
+Funkcijai jāizdrulā īpašie skaitļi izsaucot C standarta bibliotēkas *printf()* funkciju ar formātu **"%x\\n"** (lai izdrukātie skaitļi būtu heksadecimālā formā). 
+
+Jādrukā tikai Īpašie skaitļi kas atrodami intervālā no 1 līdz N, ieskaitot.
+
+Skaitlis ir īpašs, ja tā binārajā pierakstā ir tieši trīs vieninieka biti.
+
+Piemēram, sekojoši heksadecimālie skaitļi ir īpaši: "70", "1011" un "23". 
+
+Jums jāizveido sekojoši pirmkoda faili ar tieši šādiem nosaukumiem: 
+
+* **Makefile** \- darba plūsmas konfigurēšanas fails  
+* **main.c** \- galvenā C programma  
+* **m1p2.s** \- programma Asemblerā, kas realizē funkciju  
+* **m1p2.h** \- “header” fails funkcijai
+
+visiem failiem jābūt direktorijā  
+ ***m1p2***   
+kas savukārt atrodas jūsu mājas direktorijā uz kursa servera.
+
+## Galvenā C programma
+
+Asemblera funkcija tiek izsaukta no **main()** programmas kas rakstīta C.   
+main() funkcija  saņem un apstrādā argumentus un sagatavo atmiņas buferus pēc vajadzības. Tā arī izdrukā rezultātu, ja vien uzdevuma nosacījumi neprasa, ka rezultāts jādrukā no Asemblera programmas.
+
+Šajā uzdevumā main() programmai jāpieņem arguments **no “standard input”** (stdin) \- caur to tiks programmai nodota apstrādājamā simbolu virkne. Tā jāsaglabā buferī, un bufera adrese jāpadod asemblera funkcijai kā parametrs.   
+Pēc atgriešanās no asemblera funkcijas izsaukuma, C programmai nav nekas jādrukā. Visa drukāšana jāveic no asemblera programmas.   
+Pašai C programmai jāatgriež 0\.
+
+# Testēšana
+
+Programmām jābūt kompilētām un testētām ar qemu-arm emulatoru. 
+
+Testējot, parametrus jāpadod no komandu rindas, piemēram:
+
+| $ qemu-arm … m1p1 \< infile.txt \> outfile.txt |
+| :---- |
+
+Piemērā fails *infile.txt* satur ievaddatus testam, un programmas izvads tiek novadīts failā *outfile.txt*, un nav neviena komandu rindas parametra pašai programmai. Ņemiet vērā, ka dažiem uzdevumiem var būt nepieciešami arī parametri.
+
+# Submission and Grading
+
+Your submission will be collected from the specified directories on the course server  exactly on the due date and time. The grade will be reported to your grade book. There will also be the test log file *log-grading.txt* copied to the submission directory with the test results and scores.
+
+# Darba iesūtīšana un vērtēšana
+
+Jūsu sagatavotais risinājums tiks kopēts no iepriekš norādītās direktorijas kursa serverī saskaņā ar termiņa laiku. Pēc izvērtēšanas vērtējums tiks norādīts e-Studijās un iesniegšanas direktorijā tiks kopēts arī pārbaudes žurnāla fails log-grading.txt ar testu rezultātiem.  
