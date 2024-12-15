@@ -6,7 +6,7 @@
     .extern printf
 
     .data
-current_color:
+current_color: 
     .word 0x0  @ Current color storage (32-bit)
 
 debug_msg_color:
@@ -20,7 +20,8 @@ debug_msg_framebuffer:
 
     .text
 
-@ setPixColor(R0 = pointer to pixcolor_t)
+@ Function: setPixColor
+@ R0: pointer to pixcolor_t structure
 setPixColor:
     PUSH {R4-R7, LR}
 
@@ -43,7 +44,8 @@ setPixColor:
     LDR R5, =0x3
     AND R4, R4, R5             @ OP
 
-    @ 5 arguments for printf -> push extra on stack
+    @ We have 5 arguments total for printf: format, R, G, B, OP
+    @ Place OP on stack as the 5th argument
     LDR R0, =debug_msg_color
     PUSH {R4}                  @ Push OP on stack
     BL printf
@@ -53,34 +55,34 @@ setPixColor:
     BX LR
 
 
-@ pixel(R0 = x, R1 = y)
-@ Draws a pixel at (x,y) with the current color
+@ Function: pixel
+@ R0: x, R1: y
 pixel:
     PUSH {R4-R7, LR}
 
-    MOV R6, R0    @ Save x in R6
-    MOV R7, R1    @ Save y in R7
+    MOV R6, R0     @ Save x in callee-saved register R6
+    MOV R7, R1     @ Save y in callee-saved register R7
 
     @ Load current color into a callee-saved register (R5)
     LDR R4, =current_color
-    LDR R5, [R4]   @ R5 = current_color
+    LDR R5, [R4]   @ R5 = current_color (preserved across calls)
 
     @ Get frame buffer base address
     LDR R4, =FrameBufferGetAddress
     BLX R4
-    MOV R4, R0     @ R4 = framebuffer base
+    MOV R4, R0     @ R4 = framebuffer base address (safe in R4)
 
     @ Debug: Print frame buffer address
     LDR R0, =debug_msg_framebuffer
     MOV R1, R4
-    BL printf       @ Call may clobber R0-R3, but R4-R7 and R5 stay safe
+    BL printf       @ R0-R3 might be altered, but R4-R7 and R5 are safe
 
     @ Get frame buffer width
     LDR R0, =FrameBufferGetWidth
     BLX R0
     MOV R2, R0     @ R2 = width
 
-    @ Bounds checking
+    @ Bounds checking with saved x,y in R6,R7
     CMP R6, #0
     BLT pixel_exit
     CMP R7, #0
@@ -95,47 +97,42 @@ pixel:
     CMP R7, R3
     BGE pixel_exit
 
-    @ Calculate: offset = ((y * width) + x) * 4
-    @ Without MUL: do y * width by repeated addition
-    MOV R3, #0       @ R3 will hold (y * width)
-    CMP R7, #0
-    BEQ calc_done
-calc_loop:
-    SUBS R7, R7, #1  @ Decrement y
-    ADD R3, R3, R2   @ R3 += width
-    BNE calc_loop
-calc_done:
-
+    @ Calculate pixel offset = ((y * width) + x) * 4
+    MUL R3, R7, R2    @ R3 = y * width
     ADD R3, R3, R6    @ R3 = (y * width) + x
-    LSL R3, R3, #2    @ R3 = R3 * 4 (bytes per pixel)
+    LSL R3, R3, #2    @ R3 *= 4
 
     @ Debug: Print offset and color
     LDR R0, =debug_msg_pixel
     MOV R1, R3        @ offset
-    MOV R2, R5        @ color from R5
+    MOV R2, R5        @ color from R5 (stable register)
     BL printf
+    @ After printf, R5 still holds the correct color
 
-    @ Write the color
-    ADD R3, R4, R3     @ Address = base + offset
-    STR R5, [R3]       @ Store the color
+    @ Write the color to frame buffer
+    ADD R3, R4, R3    @ Address = base + offset
+    STR R5, [R3]      @ Store the color from R5
 
 pixel_exit:
     POP {R4-R7, LR}
     BX LR
 
 
+@ Function: line
 line:
     PUSH {R4-R8, LR}
     @ Placeholder
     POP {R4-R8, LR}
     BX LR
 
+@ Function: triangleFill
 triangleFill:
     PUSH {R4, LR}
     @ Placeholder
     POP {R4, LR}
     BX LR
 
+@ Function: circle
 circle:
     PUSH {R4, LR}
     @ Placeholder

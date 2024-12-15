@@ -1,86 +1,64 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <linux/fb.h>
 #include "agra.h"
-
-void save_as_bmp(const char *filename, uint32_t *buffer, int width, int height) {
-    FILE *f;
-    int filesize = 54 + 3 * width * height; // 54 bytes header, then RGB data
-
-    unsigned char bmpfileheader[14] = {'B', 'M', 0, 0, 0, 0, 0, 0, 0, 0, 54, 0, 0, 0};
-    unsigned char bmpinfoheader[40] = {40, 0, 0, 0, 0, 0, 0, 0, 1, 0, 24, 0};
-
-    bmpfileheader[2] = (unsigned char)(filesize);
-    bmpfileheader[3] = (unsigned char)(filesize >> 8);
-    bmpfileheader[4] = (unsigned char)(filesize >> 16);
-    bmpfileheader[5] = (unsigned char)(filesize >> 24);
-
-    bmpinfoheader[4] = (unsigned char)(width);
-    bmpinfoheader[5] = (unsigned char)(width >> 8);
-    bmpinfoheader[6] = (unsigned char)(width >> 16);
-    bmpinfoheader[7] = (unsigned char)(width >> 24);
-    bmpinfoheader[8] = (unsigned char)(height);
-    bmpinfoheader[9] = (unsigned char)(height >> 8);
-    bmpinfoheader[10] = (unsigned char)(height >> 16);
-    bmpinfoheader[11] = (unsigned char)(height >> 24);
-
-    f = fopen(filename, "wb");
-    if (!f) {
-        perror("Error opening file");
-        return;
-    }
-
-    fwrite(bmpfileheader, 1, 14, f);
-    fwrite(bmpinfoheader, 1, 40, f);
-
-    for (int y = height - 1; y >= 0; y--) { // BMP saves pixels bottom to top
-        for (int x = 0; x < width; x++) {
-            uint32_t pixel = buffer[y * width + x];
-            unsigned char r = (pixel >> 16) & 0xFF;
-            unsigned char g = (pixel >> 8) & 0xFF;
-            unsigned char b = pixel & 0xFF;
-            unsigned char color[3] = {b, g, r}; // BMP uses BGR format
-            fwrite(color, 1, 3, f);
-        }
-    }
-
-    fclose(f);
-}
+#include <stdio.h>
 
 int main() {
-    int fb_fd = open("/dev/fb0", O_RDONLY); // Open framebuffer for reading
-    if (fb_fd == -1) {
-        perror("Error opening framebuffer");
-        return 1;
+    // Initialize the frame buffer
+    pixcolor_t color;
+
+    // Clear the frame buffer (fill with black)
+    printf("Clearing the frame buffer (filling with black)...\n");
+    for (int y = 0; y < FrameBufferGetHeight(); y++) {
+        for (int x = 0; x < FrameBufferGetWidth(); x++) {
+            color.r = 0;
+            color.g = 0;
+            color.b = 0;
+            color.op = PIXEL_COPY;
+            pixel(x, y, &color);
+        }
     }
+    printf("Frame buffer cleared.\n");
+    FrameShow();
 
-    struct fb_var_screeninfo vinfo;
-    if (ioctl(fb_fd, FBIOGET_VSCREENINFO, &vinfo)) {
-        perror("Error reading variable information");
-        close(fb_fd);
-        return 1;
-    }
+    // Draw a white pixel at (25, 2)
+    printf("Drawing a white pixel at (25, 2)...\n");
+    color.r = 0x03FF;
+    color.g = 0x03FF;
+    color.b = 0x03FF;
+    color.op = PIXEL_COPY;
+    setPixColor(&color);
+    pixel(25, 2, &color);
+    printf("White pixel drawn at (25, 2).\n");
+    FrameShow();
 
-    int width = vinfo.xres_virtual;
-    int height = vinfo.yres_virtual;
-    int screensize = width * height * vinfo.bits_per_pixel / 8;
+    // Draw a blue line from (0, 0) to (39, 19)
+    printf("Drawing a blue line from (0, 0) to (39, 19)...\n");
+    color.r = 0;
+    color.g = 0;
+    color.b = 0x03FF;
+    setPixColor(&color);
+    line(0, 0, 39, 19);
+    printf("Blue line drawn from (0, 0) to (39, 19).\n");
+    FrameShow();
 
-    uint32_t *buffer = malloc(screensize);
-    if (!buffer) {
-        perror("Error allocating buffer");
-        close(fb_fd);
-        return 1;
-    }
+    // Draw a green-filled triangle at (20, 13), (28, 19), (38, 6)
+    printf("Drawing a green-filled triangle with vertices at (20, 13), (28, 19), (38, 6)...\n");
+    color.r = 0;
+    color.g = 0x03FF;
+    color.b = 0;
+    setPixColor(&color);
+    triangleFill(20, 13, 28, 19, 38, 6);
+    printf("Green-filled triangle drawn.\n");
+    FrameShow();
 
-    read(fb_fd, buffer, screensize); // Read framebuffer
+    // Draw a red circle with center (20, 10) and radius 7
+    printf("Drawing a red circle with center (20, 10) and radius 7...\n");
+    color.r = 0x03FF;
+    color.g = 0;
+    color.b = 0;
+    setPixColor(&color);
+    circle(20, 10, 7);
+    printf("Red circle drawn.\n");
+    FrameShow();
 
-    save_as_bmp("output.bmp", buffer, width, height);
-
-    free(buffer);
-    close(fb_fd);
     return 0;
 }
