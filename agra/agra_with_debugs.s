@@ -389,5 +389,164 @@ triangleFill:
 @------------------------------------------------------------------------------
 @ circle(int x,int y,int r) - stub
 @------------------------------------------------------------------------------
+
+@ circle(int xc, int yc, int r)
+@ R0=xc, R1=yc, R2=r
+@ Midpoint circle algorithm, no multiplication.
+@ Push all registers at start.
+
+@ After pushing all regs (14 regs: R0-R12,LR = 56 bytes)
+@ then SUB SP,SP,#32 for locals:
+@ [SP,#0]:  xc
+@ [SP,#4]:  yc
+@ [SP,#8]:  r
+@ [SP,#12]: x
+@ [SP,#16]: y
+@ [SP,#20]: d
+@ 24 bytes used, 8 spare.
+
 circle:
-    BX      LR                     @ Return (Stub Implementation)
+    PUSH {R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR}
+    SUB  SP, SP, #32
+
+    @ Store xc,yc,r
+    STR R0, [SP,#0]   @ xc
+    STR R1, [SP,#4]   @ yc
+    STR R2, [SP,#8]   @ r
+
+    @ x=0
+    MOV R0,#0
+    STR R0,[SP,#12]
+
+    @ y=r
+    LDR R0,[SP,#8]
+    STR R0,[SP,#16]
+
+    @ d=1-r = (1-r)
+    LDR R0,[SP,#8]
+    RSBS R0,R0,#1    @ R0=1-r
+    STR R0,[SP,#20]
+
+    BL draw_circle_points
+
+main_loop:
+    @ while(x<y)
+    LDR R0,[SP,#12]  @ x
+    LDR R1,[SP,#16]  @ y
+    CMP R0,R1
+    BGE done_circle
+
+    @ x=x+1
+    ADD R0,R0,#1
+    STR R0,[SP,#12]
+
+    @ d<0?
+    LDR R2,[SP,#20]  @ d
+    CMP R2,#0
+    BLT d_negative
+
+    @ d>=0 case:
+    @ y=y-1
+    LDR R1,[SP,#16]
+    SUB R1,R1,#1
+    STR R1,[SP,#16]
+
+    @ d += ((x-y)+(x-y))+1
+    @ x in R0, y in R1 now
+    SUB R3,R0,R1     @ diff=(x-y)
+    ADD R4,R3,R3     @ two_diff=(diff+diff)
+    ADD R2,R2,R4     @ d=d+two_diff
+    ADD R2,R2,#1
+    STR R2,[SP,#20]
+    B update_points
+
+d_negative:
+    @ d<0:
+    @ d += (x+x)+1
+    LDR R0,[SP,#12] @ x
+    ADD R3,R0,R0    @ two_x=(x+x)
+    ADD R2,R2,R3
+    ADD R2,R2,#1
+    STR R2,[SP,#20]
+
+update_points:
+    BL draw_circle_points
+    B main_loop
+
+done_circle:
+    ADD SP, SP, #32
+    POP {R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR}
+    BX LR
+
+
+@ draw_circle_points:
+@ Push all registers again:
+@ After this push, SP moves down another 56 bytes.
+@ Parent's locals at parent's SP:
+@ parent's SP = current SP +56 (because we just pushed 14 regs again)
+@ xc=[parent SP,#0], yc=[parent SP,#4], x=[parent SP,#12], y=[parent SP,#16]
+
+draw_circle_points:
+    PUSH {R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR}
+
+    @ parent's SP = current SP +56
+    ADD R0, SP, #56
+    LDR R4,[R0,#0]    @ xc
+    LDR R5,[R0,#4]    @ yc
+    LDR R6,[R0,#12]   @ x
+    LDR R7,[R0,#16]   @ y
+
+    @ Draw the 8 points using pixel
+    @ Before each pixel call, set R2=address of current_color
+    @ pixel(x,y,color*), color* in R2
+
+    @ pixel(xc+x, yc+y)
+    LDR R2,=current_color
+    ADD R0,R4,R6
+    ADD R1,R5,R7
+    BL pixel
+
+    @ pixel(xc-x, yc+y)
+    LDR R2,=current_color
+    SUB R0,R4,R6
+    ADD R1,R5,R7
+    BL pixel
+
+    @ pixel(xc+x, yc-y)
+    LDR R2,=current_color
+    ADD R0,R4,R6
+    SUB R1,R5,R7
+    BL pixel
+
+    @ pixel(xc-x, yc-y)
+    LDR R2,=current_color
+    SUB R0,R4,R6
+    SUB R1,R5,R7
+    BL pixel
+
+    @ pixel(xc+y, yc+x)
+    LDR R2,=current_color
+    ADD R0,R4,R7
+    ADD R1,R5,R6
+    BL pixel
+
+    @ pixel(xc-y, yc+x)
+    LDR R2,=current_color
+    SUB R0,R4,R7
+    ADD R1,R5,R6
+    BL pixel
+
+    @ pixel(xc+y, yc - x)
+    LDR R2,=current_color
+    ADD R0,R4,R7
+    SUB R1,R5,R6
+    BL pixel
+
+    @ pixel(xc-y, yc - x)
+    LDR R2,=current_color
+    SUB R0,R4,R7
+    SUB R1,R5,R6
+    BL pixel
+
+    POP {R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,LR}
+    BX LR
